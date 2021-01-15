@@ -1,0 +1,124 @@
+﻿@model WebAppTest.Models.Message
+
+@{
+    ViewBag.Title = "GetStatus";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Message Sender</h2>
+<hr />
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "msgForm" }))
+{
+    <div class="row maxwidth p-0 m-0 mt-3 ">
+        <div class="form-group m-0 w-100">
+            @Html.LabelFor(m => m.Email, new { @class = "d-block form-control-label ml-xl-1" })
+            @Html.TextBoxFor(m => m.Email, new { @id = "email", @class = "d-block form-control mw-60 ml-xl-1 b-1", @onkeyup = "writeContent(\'email\')" })
+            <div id="msg_status" class="text-warning" hidden>The Email address is wrong</div>
+        </div>
+        <div id="email_status">
+        </div>
+        <div class="form-group m-0 w-100">
+            @Html.LabelFor(m => m.MessageText, new { @class = "d-block form-control-label ml-xl-1" })
+            @Html.TextAreaFor(m => m.MessageText, new { @id = "msg", @class = "d-block form-control w-100 b-1 msgbox", @type = "text", @placeholder = "Write a Massage", @onkeyup = "writeContent(\'msg\')" })
+        </div>
+
+    </div>
+    <hr />
+    @Html.ActionLink("Send Message", null, null, new { @id = "btnSubmit", @type = "Button", @class = "btn ajax-post btn-outline-primary m-1", @href = "" })
+    
+   @* <asp:Button id="btnSend" runat="server" OnClick="btnSend_Click" formmethod="post" class = "btn btn-outline-primary m-1" Text="Send" >Send</asp:Button>*@
+}
+
+
+
+<script>
+    $('.ajax-post').click(function (e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    function sendMessage() {
+        var id = "email";
+        var email = '';
+        var el = document.getElementById(id);
+        if (el != null) {
+            email = el.value;
+            var res = isValidEmail(email);
+            console.log('res1=' + res);
+            if (res) {
+                window.location.href = "/Message/Confirmation";   
+                return;
+            }            
+        }
+        
+
+    }
+
+    function isValidEmail(email, callback) {
+        if (email.length) {
+            const this_form = new FormData(document.getElementById('msgForm'));
+            let form_alert = document.getElementById('msg_status');
+            let res;
+            $.ajax({
+                url: "/Message/EmailCheck",
+                type: 'POST',
+                contentType: false,
+                cache: false,
+                processData: false,
+                data: this_form,
+                async: false,
+                success: function (result) {
+                    if (result == "true") {
+                        form_alert.hidden = true;
+                        
+                        res = true;
+                        console.log('res tr=' + result);
+                    } else {
+                        form_alert.hidden = false;
+                        res = false;
+                    }
+                }  
+            });
+            if (callback) {
+                callback();
+            }
+            return res;
+        }
+    }
+
+    function writeContent(id) {
+        delete_cookie(id);
+        var value = document.getElementById(id).value.split('\n').join('\\');
+        document.cookie = id + "=" + (value) + "; path=/";
+    }
+
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length).split('\\').join('\n');
+        }
+        return null;
+    }
+
+    function delete_cookie(name) {
+        document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+
+    $(document).ready(function () {
+        var id = "email";
+        var el = document.getElementById(id);
+        if (el != null) {
+            el.value = getCookie(id);
+        }
+
+        id = "msg";
+        el = document.getElementById(id);
+        if (el != null) {
+            el.value = getCookie(id);
+        }
+
+    });
+</script>
